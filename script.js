@@ -9,13 +9,13 @@ const connection = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
 
 const timeout = (ms) => new Promise((res) => setTimeout(res, ms));
 
 async function scrape() {
   try {
-    await connection.promise().query(`CREATE database for_test`);
     await connection.promise().query(
       `CREATE TABLE IF NOT EXISTS history (
     id bigint NOT NULL AUTO_INCREMENT primary key,
