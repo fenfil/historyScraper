@@ -23,6 +23,7 @@ async function scrape() {
     game_id bigint NOT NULL,
     username VARCHAR(255) NOT NULL,
     wagered bigint NOT NULL,
+    profit bigint NOT NULL,
     isOSRS boolean NOT NULL,
     created_at DATETIME NOT NULL DEFAULT NOW()
   ) ENGINE=MyISAM;`
@@ -65,6 +66,7 @@ async function scrape() {
           [].map.call(el.children, (el) => el.innerText.trim())
         )
       );
+
       const i = a.findIndex((el) => el[1] == lastSavedId);
       const newHistory = i == -1 ? a.slice(0) : a.slice(0, i);
 
@@ -77,6 +79,7 @@ async function scrape() {
           80690140,
           'nortdawgdub',
           5000,
+          5000,
           'OSRS',
         ]
       ]
@@ -86,14 +89,14 @@ async function scrape() {
         parseInt(h[1].replace(/,/g, ""), 10),
         h[2],
         parseBet(h[4].split(" ")[0]),
+        parseBet(h[6].split(" ")[0]),
         +(h[4].split(" ")[1] == "OSRS"),
       ]);
-      console.log(historyToSave);
       try {
         await connection
           .promise()
           .query(
-            `insert into history(game,game_id,username,wagered,isOSRS) values (${historyToSave
+            `insert into history(game,game_id,username,wagered,profit,isOSRS) values (${historyToSave
               .map((h) =>
                 h.map((v) => (typeof v == "number" ? v : `'${v}'`)).join(",")
               )
@@ -111,20 +114,29 @@ async function scrape() {
 scrape();
 
 function parseBet(betString) {
+  const sign = betString[0] == "-" ? -1 : 1;
   const bet = betString
     .toString()
     .replace(/,/gi, ".")
     .replace(/[^kKmMbB0-9.]/gi, "")
     .trim()
     .toLowerCase();
+
   switch (bet.charAt(bet.length - 1)) {
     case "k":
-      return Math.round(parseFloat(bet.substr(0, bet.length - 1)) * 1000);
+      return (
+        sign * Math.round(parseFloat(bet.substr(0, bet.length - 1)) * 1000)
+      );
     case "m":
-      return Math.round(parseFloat(bet.substr(0, bet.length - 1)) * 1000000);
+      return (
+        sign * Math.round(parseFloat(bet.substr(0, bet.length - 1)) * 1000000)
+      );
     case "b":
-      return Math.round(parseFloat(bet.substr(0, bet.length - 1)) * 1000000000);
+      return (
+        sign *
+        Math.round(parseFloat(bet.substr(0, bet.length - 1)) * 1000000000)
+      );
     default:
-      return Math.round(parseFloat(bet));
+      return sign * Math.round(parseFloat(bet));
   }
 }
